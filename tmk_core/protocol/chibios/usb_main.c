@@ -1036,11 +1036,11 @@ void send_remote_wakeup(USBDriver *usbp) {
   chThdSleepMilliseconds(15);
   USB0->CTL &= ~USBx_CTL_RESUME;
 #endif /* KINETIS_USB_USE_USB0 */
-#elif defined(STM32F0XX) /* K20x || KL2x */
+#elif defined(STM32F0XX) || defined(STM32F1XX) /* K20x || KL2x */
   STM32_USB->CNTR |= CNTR_RESUME;
   chThdSleepMilliseconds(15);
   STM32_USB->CNTR &= ~CNTR_RESUME;
-#else /* STM32F0XX */
+#else /* STM32F0XX || STM32F1XX */
 #warning Sending remote wakeup packet not implemented for your platform.
 #endif /* K20x || KL2x */
 }
@@ -1121,24 +1121,26 @@ void send_keyboard(report_keyboard_t *report) {
   }
   osalSysUnlock();
 
-  bool ret;
+  bool ep_not_ready;
 #ifdef NKRO_ENABLE
   if(keyboard_nkro) {  /* NKRO protocol */
     usbPrepareTransmit(&USB_DRIVER, NKRO_ENDPOINT, (uint8_t *)report, sizeof(report_keyboard_t));
+    /* need to wait until the previous packet has made it through */
     do {
         osalSysLock();
-        ret = usbStartTransmitI(&USB_DRIVER, NKRO_ENDPOINT);
+        ep_not_ready = usbStartTransmitI(&USB_DRIVER, NKRO_ENDPOINT);
         osalSysUnlock();
-    } while (ret);
+    } while (ep_not_ready);
   } else
 #endif /* NKRO_ENABLE */
   { /* boot protocol */
     usbPrepareTransmit(&USB_DRIVER, KBD_ENDPOINT, (uint8_t *)report, KBD_EPSIZE);
+    /* need to wait until the previous packet has made it through */
     do {
         osalSysLock();
-        ret = usbStartTransmitI(&USB_DRIVER, KBD_ENDPOINT);
+        ep_not_ready = usbStartTransmitI(&USB_DRIVER, KBD_ENDPOINT);
         osalSysUnlock();
-    } while (ret);
+    } while (ep_not_ready);
   }
   keyboard_report_sent = *report;
 }
