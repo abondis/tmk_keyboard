@@ -16,8 +16,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdbool.h>
-#include<avr/io.h>
-#include<util/delay.h>
+//#include<avr/io.h>
+//#include<util/delay.h>
+#include "wait.h"
 #include "ps2.h"
 #include "ps2_mouse.h"
 #include "report.h"
@@ -39,10 +40,11 @@ uint8_t ps2_mouse_init(void) {
 
     ps2_host_init();
 
-    _delay_ms(1000);    // wait for powering up
+    wait_ms(1000);    // wait for powering up
 
     // send Reset
-    rcv = ps2_host_send(0xFF);
+    //rcv = ps2_host_send(0xFF);
+    rcv = ps2_reset();
     print("ps2_mouse_init: send Reset: ");
     phex(rcv); phex(ps2_error); print("\n");
 
@@ -75,8 +77,10 @@ void ps2_mouse_task(void)
     static uint8_t buttons_prev = 0;
 
     /* receives packet from mouse */
+    //print("ps2_mouse_task: receives packet from mouse\n");
     uint8_t rcv;
     rcv = ps2_host_send(PS2_MOUSE_READ_DATA);
+    //print("ps2_mouse_task: received packet from mouse\n");
     if (rcv == PS2_ACK) {
         mouse_report.buttons = ps2_host_recv_response();
         mouse_report.x = ps2_host_recv_response();
@@ -153,7 +157,7 @@ void ps2_mouse_task(void)
                 // send Scroll Button(down and up at once) when not scrolled
                 mouse_report.buttons |= (PS2_MOUSE_SCROLL_BTN_MASK);
                 host_mouse_send(&mouse_report);
-                _delay_ms(100);
+                wait_ms(100);
                 mouse_report.buttons &= ~(PS2_MOUSE_SCROLL_BTN_MASK);
             }
 #endif

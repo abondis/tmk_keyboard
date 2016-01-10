@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include "keyboard.h"
 #include "matrix.h"
+#include "joystick.h"
 #include "keymap.h"
 #include "host.h"
 #include "led.h"
@@ -75,6 +76,9 @@ void keyboard_init(void)
 #ifdef PS2_MOUSE_ENABLE
     ps2_mouse_init();
 #endif
+#ifdef JOYSTICK_MOUSE_ENABLE
+    joystick_init();
+#endif
 #ifdef SERIAL_MOUSE_ENABLE
     serial_mouse_init();
 #endif
@@ -105,7 +109,6 @@ void keyboard_task(void)
     static uint8_t led_status = 0;
     matrix_row_t matrix_row = 0;
     matrix_row_t matrix_change = 0;
-
     matrix_scan();
     for (uint8_t r = 0; r < MATRIX_ROWS; r++) {
         matrix_row = matrix_get_row(r);
@@ -152,7 +155,7 @@ MATRIX_LOOP_END:
 #endif
 
 #ifdef PS2_MOUSE_ENABLE
-    ps2_mouse_task();
+    //ps2_mouse_task();
 #endif
 
 #ifdef SERIAL_MOUSE_ENABLE

@@ -61,11 +61,21 @@ void ps2_host_init(void)
 {
     clock_init();
     data_init();
+    reset_init();
 
     // POR(150-2000ms) plus BAT(300-500ms) may take 2.5sec([3]p.20)
     wait_ms(2500);
 
     inhibit();
+}
+
+uint8_t ps2_reset(void)
+{
+    uint8_t rcv;
+    reset_hi();
+    rcv = ps2_host_send(0xFF);
+    reset_lo();
+    return rcv;
 }
 
 uint8_t ps2_host_send(uint8_t data)

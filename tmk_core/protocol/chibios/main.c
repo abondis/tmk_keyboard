@@ -25,6 +25,7 @@
 #include "host.h"
 #include "host_driver.h"
 #include "keyboard.h"
+#include "joystick.h"
 #include "action.h"
 #include "action_util.h"
 #include "mousekey.h"
@@ -34,6 +35,7 @@
 #ifdef SLEEP_LED_ENABLE
 #include "sleep_led.h"
 #endif
+#include "ps2_mouse.h"
 #include "suspend.h"
 
 
@@ -59,27 +61,24 @@ host_driver_t chibios_driver = {
 };
 
 
-/* TESTING
- * Amber LED blinker thread, times are in milliseconds.
- */
-/* set this variable to non-zero anywhere to blink once */
-// uint8_t blinkLed = 0;
-// static THD_WORKING_AREA(waBlinkerThread, 128);
-// static THD_FUNCTION(blinkerThread, arg) {
-//   (void)arg;
-//   chRegSetThreadName("blinkOrange");
-//   while(true) {
-//     if(blinkLed) {
-//       blinkLed = 0;
-//       palSetPad(TEENSY_PIN13_IOPORT, TEENSY_PIN13);
-//       chThdSleepMilliseconds(100);
-//       palClearPad(TEENSY_PIN13_IOPORT, TEENSY_PIN13);
-//     }
-//     chThdSleepMilliseconds(100);
-//   }
-// }
 
-
+/* ps2 mouse thread */
+static THD_WORKING_AREA(WA_ps2_mouse, 128);
+static THD_FUNCTION(ps2_mouse_thr, arg) {
+  (void)arg;
+  print("running mouse thread");
+  while(true) {
+#ifdef PS2_MOUSE_ENABLE
+    ps2_mouse_task();
+#endif
+#ifdef JOYSTICK_MOUSE_ENABLE
+  adcAcquireBus(&ADCD1);
+    sample_joystick(); 
+    chThdSleepMilliseconds(10);
+  adcReleaseBus(&ADCD1);
+#endif
+  }
+}
 
 /* Main thread
  */
@@ -87,9 +86,6 @@ int main(void) {
   /* ChibiOS/RT init */
   halInit();
   chSysInit();
-
-  // TESTING
-  // chThdCreateStatic(waBlinkerThread, sizeof(waBlinkerThread), NORMALPRIO, blinkerThread, NULL);
 
   /* Init USB */
   init_usb_driver(&USB_DRIVER);
@@ -105,6 +101,11 @@ int main(void) {
 
   /* init TMK modules */
   keyboard_init();
+#ifdef JOYSTICK_MOUSE_ENABLE
+  adcAcquireBus(&ADCD1);
+  joystick_init(); 
+  adcReleaseBus(&ADCD1);
+#endif
   host_set_driver(&chibios_driver);
 
 #ifdef SLEEP_LED_ENABLE
@@ -114,6 +115,8 @@ int main(void) {
   print("Keyboard start.\n");
 
   /* Main loop */
+  //chThdCreateStatic(WA_keyboard, sizeof(WA_keyboard), NORMALPRIO, keyboard_thr, NULL);
+  chThdCreateStatic(WA_ps2_mouse, sizeof(WA_ps2_mouse), NORMALPRIO+1, ps2_mouse_thr, NULL);
   while(true) {
 
     if(USB_DRIVER.state == USB_SUSPENDED) {

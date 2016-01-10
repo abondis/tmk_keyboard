@@ -12,4 +12,7 @@ void data_lo(void);
 void data_hi(void);
 bool data_in(void);
 
+void reset_init(void);
+void reset_lo(void);
+void reset_hi(void);
 #endif

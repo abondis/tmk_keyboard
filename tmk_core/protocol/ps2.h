@@ -87,6 +87,7 @@ POSSIBILITY OF SUCH DAMAGE.
 extern uint8_t ps2_error;
 
 void ps2_host_init(void);
+uint8_t ps2_reset(void);
 uint8_t ps2_host_send(uint8_t data);
 uint8_t ps2_host_recv_response(void);
 uint8_t ps2_host_recv(void);
