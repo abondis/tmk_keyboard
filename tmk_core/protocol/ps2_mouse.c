@@ -43,8 +43,8 @@ uint8_t ps2_mouse_init(void) {
     wait_ms(1000);    // wait for powering up
 
     // send Reset
-    //rcv = ps2_host_send(0xFF);
-    rcv = ps2_reset();
+    rcv = ps2_host_send(0xFF);
+    //rcv = ps2_reset();
     print("ps2_mouse_init: send Reset: ");
     phex(rcv); phex(ps2_error); print("\n");
 
@@ -77,10 +77,10 @@ void ps2_mouse_task(void)
     static uint8_t buttons_prev = 0;
 
     /* receives packet from mouse */
-    //print("ps2_mouse_task: receives packet from mouse\n");
     uint8_t rcv;
     rcv = ps2_host_send(PS2_MOUSE_READ_DATA);
-    //print("ps2_mouse_task: received packet from mouse\n");
+    print("ps2_mouse_task: received packet from mouse\n");
+    phex(rcv); phex(ps2_error); print("\n");
     if (rcv == PS2_ACK) {
         mouse_report.buttons = ps2_host_recv_response();
         mouse_report.x = ps2_host_recv_response();
